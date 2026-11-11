@@ -5,6 +5,8 @@ void main() {
   runApp(const MyApp());
 }
 
+/// Root widget aplikasi mobile MyPortfolio.
+/// Mengonfigurasi tema Material 3, judul aplikasi, serta halaman beranda awal.
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -12,6 +14,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'MyPortfolio',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.indigo,
@@ -19,7 +22,7 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: MyHomePage(),
+      home: const MyHomePage(),
     );
   }
 }
