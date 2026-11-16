@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:myportofolio_mobile/widgets/left_drawer.dart';
+import 'package:myportofolio_mobile/widgets/project_card.dart';
 
 /// Halaman utama aplikasi portofolio mobile (StatelessWidget).
-/// Menampilkan kartu informasi pemilik portofolio serta grid menu aksi
-/// portofolio dengan warna kartu yang berbeda-beda.
+/// Menampilkan kartu informasi pemilik portofolio, menu drawer navigasi,
+/// serta grid menu aksi portofolio dengan warna kartu yang berbeda-beda.
 class MyHomePage extends StatelessWidget {
   const MyHomePage({super.key});
 
@@ -11,14 +13,14 @@ class MyHomePage extends StatelessWidget {
   final String kelas = "PBP E";
 
   final List<ItemHomepage> items = const [
-    ItemHomepage("Lihat Experience", Icons.work_outline, Color(0xFF1565C0)),
-    ItemHomepage("Tambah Experience", Icons.add_circle_outline, Color(0xFF2E7D32)),
+    ItemHomepage("Lihat Proyek", Icons.folder, Color(0xFF1565C0)),
+    ItemHomepage("Tambah Proyek", Icons.add_circle, Color(0xFF2E7D32)),
     ItemHomepage("Logout", Icons.logout, Color(0xFFC62828)),
   ];
 
   @override
   Widget build(BuildContext context) {
-    // Scaffold menyediakan struktur visual dasar halaman (AppBar, Body, SnackBar).
+    // Scaffold menyediakan struktur visual dasar halaman (AppBar, Drawer, Body, SnackBar).
     return Scaffold(
       // AppBar menampilkan bar bagian atas halaman aplikasi.
       appBar: AppBar(
@@ -30,7 +32,10 @@ class MyHomePage extends StatelessWidget {
           ),
         ),
         backgroundColor: Theme.of(context).colorScheme.primary,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
+      // Drawer menu navigasi samping
+      drawer: const LeftDrawer(),
       // Body halaman utama dengan dukungan scroll dan lebar maksimal responsif.
       body: SingleChildScrollView(
         child: Center(
@@ -127,80 +132,6 @@ class InfoCard extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Model data untuk setiap item tombol menu aksi pada beranda portofolio,
-/// menyimpan label ([name]), ikon ([icon]), dan warna latar unik ([color]).
-class ItemHomepage {
-  final String name;
-  final IconData icon;
-  final Color color;
-
-  const ItemHomepage(this.name, this.icon, this.color);
-}
-
-/// Widget kartu tombol aksi portofolio yang dapat ditekan.
-/// Menggunakan warna latar unik dari [item] dan memunculkan [SnackBar] saat ditekan.
-class ItemCard extends StatelessWidget {
-  final ItemHomepage item;
-
-  const ItemCard(this.item, {super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      // Menggunakan warna unik dari atribut item.color (modular tanpa percabangan).
-      color: item.color,
-      elevation: 3.0,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        // Aksi ketika kartu ditekan oleh pengguna.
-        onTap: () {
-          // Menampilkan SnackBar interaktif sesuai nama tombol yang ditekan.
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(
-              SnackBar(
-                content: Text("Kamu telah menekan tombol ${item.name}!"),
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            );
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  item.icon,
-                  color: Colors.white,
-                  size: 28.0,
-                ),
-                const SizedBox(height: 6),
-                Flexible(
-                  child: Text(
-                    item.name,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13.0,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ),
       ),
     );
