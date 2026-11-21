@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myportofolio_mobile/screens/experience_form.dart';
 import 'package:myportofolio_mobile/screens/project_form.dart';
 
 /// Model data untuk setiap item tombol menu aksi pada beranda portofolio,
@@ -13,7 +14,7 @@ class ItemHomepage {
 
 /// Widget kartu tombol aksi portofolio yang dapat ditekan.
 /// Menggunakan warna latar unik dari [item], memunculkan [SnackBar],
-/// dan melakukan navigasi ke [ProjectFormPage] untuk aksi tambah proyek/experience.
+/// serta melakukan navigasi ke [ProjectFormPage] atau [ExperienceFormPage].
 class ItemCard extends StatelessWidget {
   final ItemHomepage item;
 
@@ -43,13 +44,17 @@ class ItemCard extends StatelessWidget {
               ),
             );
 
-          // Navigasi ke halaman form jika tombol adalah Tambah Proyek atau Tambah Experience
-          if (item.name == "Tambah Proyek" || item.name == "Tambah Experience") {
+          // Navigasi ke halaman form sesuai kartu aksi yang ditekan
+          final Widget? destination = switch (item.name) {
+            "Tambah Proyek" => const ProjectFormPage(),
+            "Tambah Experience" => const ExperienceFormPage(),
+            _ => null,
+          };
+
+          if (destination != null) {
             Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (context) => const ProjectFormPage(),
-              ),
+              MaterialPageRoute(builder: (context) => destination),
             );
           }
         },

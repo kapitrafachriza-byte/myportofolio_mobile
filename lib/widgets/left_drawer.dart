@@ -1,22 +1,44 @@
 import 'package:flutter/material.dart';
+import 'package:myportofolio_mobile/screens/experience_form.dart';
 import 'package:myportofolio_mobile/screens/menu.dart';
 import 'package:myportofolio_mobile/screens/project_form.dart';
 
 /// Widget drawer menu samping untuk navigasi aplikasi MyPortfolio.
-/// Menyediakan akses cepat ke Halaman Utama dan Form Tambah Proyek.
+/// Menyediakan akses ke Halaman Utama, Form Tambah Proyek, dan Form Tambah Experience.
 class LeftDrawer extends StatelessWidget {
   const LeftDrawer({super.key});
 
+  /// Helper untuk membangun item navigasi drawer dengan pola [Navigator.pushReplacement].
+  Widget _buildNavTile({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required Widget destination,
+  }) {
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(title),
+      onTap: () {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => destination),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final primaryColor = Theme.of(context).colorScheme.primary;
+
     return Drawer(
       child: ListView(
         children: [
-          const DrawerHeader(
+          DrawerHeader(
             decoration: BoxDecoration(
-              color: Colors.indigo,
+              color: primaryColor,
             ),
-            child: SingleChildScrollView(
+            child: const SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -40,31 +62,23 @@ class LeftDrawer extends StatelessWidget {
               ),
             ),
           ),
-          ListTile(
-            leading: const Icon(Icons.home_outlined),
-            title: const Text('Home'),
-            // Navigasi ke halaman utama portofolio
-            onTap: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const MyHomePage(),
-                ),
-              );
-            },
+          _buildNavTile(
+            context: context,
+            icon: Icons.home_outlined,
+            title: 'Home',
+            destination: const MyHomePage(),
           ),
-          ListTile(
-            leading: const Icon(Icons.add_circle_outline),
-            title: const Text('Add Project'),
-            // Navigasi ke halaman tambah proyek
-            onTap: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ProjectFormPage(),
-                ),
-              );
-            },
+          _buildNavTile(
+            context: context,
+            icon: Icons.add_circle_outline,
+            title: 'Add Project',
+            destination: const ProjectFormPage(),
+          ),
+          _buildNavTile(
+            context: context,
+            icon: Icons.work_outline,
+            title: 'Add Experience',
+            destination: const ExperienceFormPage(),
           ),
         ],
       ),
