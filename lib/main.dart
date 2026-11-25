@@ -1,28 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:myportofolio_mobile/screens/menu.dart';
+import 'package:myportofolio_mobile/services/api_client.dart';
+import 'package:myportofolio_mobile/services/auth_state.dart';
+import 'package:provider/provider.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp(apiClient: ApiClient()));
 }
 
 /// Root widget aplikasi mobile MyPortfolio.
-/// Mengonfigurasi tema Material 3, judul aplikasi, serta halaman beranda awal.
+/// Menyediakan [ApiClient] dan [AuthState] ke seluruh widget tree via [MultiProvider].
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  MyApp({ApiClient? apiClient, super.key})
+    : apiClient = apiClient ?? ApiClient();
+
+  final ApiClient apiClient;
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'MyPortfolio',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.indigo,
-          secondary: Colors.amber[700],
+    return MultiProvider(
+      providers: [
+        Provider<ApiClient>.value(value: apiClient),
+        ChangeNotifierProvider<AuthState>(create: (_) => AuthState(apiClient)),
+      ],
+      child: MaterialApp(
+        title: 'MyPortfolio',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.indigo,
+            secondary: Colors.amber[700],
+          ),
+          useMaterial3: true,
         ),
-        useMaterial3: true,
+        home: const MyHomePage(),
       ),
-      home: const MyHomePage(),
     );
   }
 }

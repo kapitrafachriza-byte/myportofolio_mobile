@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:myportofolio_mobile/screens/experience_form.dart';
+import 'package:myportofolio_mobile/screens/login_screen.dart';
 import 'package:myportofolio_mobile/screens/menu.dart';
 import 'package:myportofolio_mobile/screens/project_form.dart';
+import 'package:myportofolio_mobile/screens/project_list_screen.dart';
+import 'package:myportofolio_mobile/services/auth_state.dart';
+import 'package:myportofolio_mobile/widgets/auth_guard.dart';
+import 'package:provider/provider.dart';
 
 /// Widget drawer menu samping untuk navigasi aplikasi MyPortfolio.
-/// Menyediakan akses ke Halaman Utama, Form Tambah Proyek, dan Form Tambah Experience.
+/// Menyediakan akses ke Beranda, Daftar Proyek, Form Proyek (terlindungi login),
+/// Form Experience, serta Login/Logout berbasis token DRF.
 class LeftDrawer extends StatelessWidget {
   const LeftDrawer({super.key});
 
-  /// Helper untuk membangun item navigasi drawer dengan pola [Navigator.pushReplacement].
   Widget _buildNavTile({
     required BuildContext context,
     required IconData icon,
@@ -30,14 +35,13 @@ class LeftDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final primaryColor = Theme.of(context).colorScheme.primary;
+    final isLoggedIn = context.watch<AuthState>().isLoggedIn;
 
     return Drawer(
       child: ListView(
         children: [
           DrawerHeader(
-            decoration: BoxDecoration(
-              color: primaryColor,
-            ),
+            decoration: BoxDecoration(color: primaryColor),
             child: const SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -53,10 +57,7 @@ class LeftDrawer extends StatelessWidget {
                   SizedBox(height: 10),
                   Text(
                     'Explore personal projects and experiences!',
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: Colors.white,
-                    ),
+                    style: TextStyle(fontSize: 15, color: Colors.white),
                   ),
                 ],
               ),
@@ -70,9 +71,21 @@ class LeftDrawer extends StatelessWidget {
           ),
           _buildNavTile(
             context: context,
-            icon: Icons.add_circle_outline,
-            title: 'Add Project',
-            destination: const ProjectFormPage(),
+            icon: Icons.folder_outlined,
+            title: 'Projects',
+            destination: const ProjectListScreen(),
+          ),
+          ListTile(
+            leading: const Icon(Icons.add_circle_outline),
+            title: const Text('Add Project'),
+            onTap: () async {
+              final allowed = await ensureLoggedIn(context);
+              if (!allowed || !context.mounted) return;
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const ProjectFormPage()),
+              );
+            },
           ),
           _buildNavTile(
             context: context,
@@ -80,6 +93,35 @@ class LeftDrawer extends StatelessWidget {
             title: 'Add Experience',
             destination: const ExperienceFormPage(),
           ),
+          const Divider(),
+          if (!isLoggedIn)
+            ListTile(
+              leading: const Icon(Icons.login),
+              title: const Text('Login'),
+              onTap: () async {
+                final navigator = Navigator.of(context);
+                navigator.pop();
+                await navigator.push<bool>(
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                );
+              },
+            )
+          else
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Logout'),
+              onTap: () async {
+                final messenger = ScaffoldMessenger.of(context);
+                final authState = context.read<AuthState>();
+                Navigator.pop(context);
+                await authState.logout();
+                messenger
+                  ..hideCurrentSnackBar()
+                  ..showSnackBar(
+                    const SnackBar(content: Text('Berhasil logout.')),
+                  );
+              },
+            ),
         ],
       ),
     );

@@ -172,9 +172,7 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
       labelText: labelText,
       hintText: hintText,
       suffixIcon: suffixIcon,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8.0),
-      ),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
     );
   }
 
@@ -337,7 +335,8 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
                       maxLines: 4,
                       decoration: _fieldDecoration(
                         labelText: 'Deskripsi Experience',
-                        hintText: 'Jelaskan peran, tanggung jawab, dan pencapaian',
+                        hintText:
+                            'Jelaskan peran, tanggung jawab, dan pencapaian',
                       ),
                       validator: (String? value) {
                         if (value == null || value.trim().isEmpty) {

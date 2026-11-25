@@ -27,10 +27,7 @@ class MyHomePage extends StatelessWidget {
       appBar: AppBar(
         title: const Text(
           'MyPortfolio',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Theme.of(context).colorScheme.primary,
         iconTheme: const IconThemeData(color: Colors.white),
@@ -52,11 +49,17 @@ class MyHomePage extends StatelessWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Expanded(child: InfoCard(title: 'NPM', content: npm)),
+                        Expanded(
+                          child: InfoCard(title: 'NPM', content: npm),
+                        ),
                         const SizedBox(width: 8.0),
-                        Expanded(child: InfoCard(title: 'Name', content: nama)),
+                        Expanded(
+                          child: InfoCard(title: 'Name', content: nama),
+                        ),
                         const SizedBox(width: 8.0),
-                        Expanded(child: InfoCard(title: 'Class', content: kelas)),
+                        Expanded(
+                          child: InfoCard(title: 'Class', content: kelas),
+                        ),
                       ],
                     ),
                   ),
@@ -83,7 +86,9 @@ class MyHomePage extends StatelessWidget {
                             return GridView.count(
                               primary: false,
                               physics: const NeverScrollableScrollPhysics(),
-                              padding: const EdgeInsets.symmetric(vertical: 16.0),
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 16.0,
+                              ),
                               crossAxisSpacing: 10,
                               mainAxisSpacing: 10,
                               crossAxisCount: isWide ? 4 : 2,
@@ -128,15 +133,9 @@ class InfoCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              title,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
+            Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8.0),
-            Text(
-              content,
-              textAlign: TextAlign.center,
-            ),
+            Text(content, textAlign: TextAlign.center),
           ],
         ),
       ),
