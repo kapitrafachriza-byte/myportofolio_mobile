@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:myportofolio_mobile/screens/experience_form.dart';
+import 'package:myportofolio_mobile/screens/experience_list_screen.dart';
 import 'package:myportofolio_mobile/screens/login_screen.dart';
 import 'package:myportofolio_mobile/screens/menu.dart';
 import 'package:myportofolio_mobile/screens/project_form.dart';
@@ -9,8 +10,8 @@ import 'package:myportofolio_mobile/widgets/auth_guard.dart';
 import 'package:provider/provider.dart';
 
 /// Widget drawer menu samping untuk navigasi aplikasi MyPortfolio.
-/// Menyediakan akses ke Beranda, Daftar Proyek, Form Proyek (terlindungi login),
-/// Form Experience, serta Login/Logout berbasis token DRF.
+/// Menyediakan akses ke Beranda, Daftar Proyek, Daftar Experience,
+/// Form Proyek/Experience (terlindungi login), serta Login/Logout berbasis token DRF.
 class LeftDrawer extends StatelessWidget {
   const LeftDrawer({super.key});
 
@@ -27,6 +28,26 @@ class LeftDrawer extends StatelessWidget {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => destination),
+        );
+      },
+    );
+  }
+
+  Widget _buildGuardedNavTile({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required Widget destination,
+  }) {
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(title),
+      onTap: () async {
+        final allowed = await ensureLoggedIn(context);
+        if (!allowed || !context.mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => destination),
         );
       },
     );
@@ -75,19 +96,19 @@ class LeftDrawer extends StatelessWidget {
             title: 'Projects',
             destination: const ProjectListScreen(),
           ),
-          ListTile(
-            leading: const Icon(Icons.add_circle_outline),
-            title: const Text('Add Project'),
-            onTap: () async {
-              final allowed = await ensureLoggedIn(context);
-              if (!allowed || !context.mounted) return;
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => const ProjectFormPage()),
-              );
-            },
+          _buildGuardedNavTile(
+            context: context,
+            icon: Icons.add_circle_outline,
+            title: 'Add Project',
+            destination: const ProjectFormPage(),
           ),
           _buildNavTile(
+            context: context,
+            icon: Icons.work_history_outlined,
+            title: 'Experiences',
+            destination: const ExperienceListScreen(),
+          ),
+          _buildGuardedNavTile(
             context: context,
             icon: Icons.work_outline,
             title: 'Add Experience',

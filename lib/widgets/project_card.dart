@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:myportofolio_mobile/screens/experience_form.dart';
+import 'package:myportofolio_mobile/screens/experience_list_screen.dart';
 import 'package:myportofolio_mobile/screens/project_form.dart';
 import 'package:myportofolio_mobile/screens/project_list_screen.dart';
 import 'package:myportofolio_mobile/services/auth_state.dart';
@@ -81,7 +82,13 @@ class ItemCard extends StatelessWidget {
       await navigator.push(
         MaterialPageRoute(builder: (_) => const ProjectFormPage()),
       );
+    } else if (item.name == 'Lihat Experience') {
+      await navigator.push(
+        MaterialPageRoute(builder: (_) => const ExperienceListScreen()),
+      );
     } else if (item.name == 'Tambah Experience') {
+      final allowed = await ensureLoggedIn(context);
+      if (!allowed || !context.mounted) return;
       await navigator.push(
         MaterialPageRoute(builder: (_) => const ExperienceFormPage()),
       );

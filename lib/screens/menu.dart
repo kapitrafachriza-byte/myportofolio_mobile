@@ -15,6 +15,11 @@ class MyHomePage extends StatelessWidget {
   final List<ItemHomepage> items = const [
     ItemHomepage("Lihat Proyek", Icons.folder, Color(0xFF1565C0)),
     ItemHomepage("Tambah Proyek", Icons.add_circle, Color(0xFF2E7D32)),
+    ItemHomepage(
+      "Lihat Experience",
+      Icons.work_history_outlined,
+      Color(0xFF6A1B9A),
+    ),
     ItemHomepage("Tambah Experience", Icons.work_outline, Color(0xFFEF6C00)),
     ItemHomepage("Logout", Icons.logout, Color(0xFFC62828)),
   ];
@@ -79,7 +84,7 @@ class MyHomePage extends StatelessWidget {
                             ),
                           ),
                         ),
-                        // GridView responsif menampilkan 4 kartu aksi (2 kolom di ponsel, 4 kolom di layar lebar).
+                        // GridView responsif menampilkan 5 kartu aksi (2 kolom di ponsel, 3 kolom di layar lebar).
                         LayoutBuilder(
                           builder: (context, constraints) {
                             final isWide = constraints.maxWidth >= 560;
@@ -91,8 +96,8 @@ class MyHomePage extends StatelessWidget {
                               ),
                               crossAxisSpacing: 10,
                               mainAxisSpacing: 10,
-                              crossAxisCount: isWide ? 4 : 2,
-                              childAspectRatio: isWide ? 1.0 : 1.35,
+                              crossAxisCount: isWide ? 3 : 2,
+                              childAspectRatio: isWide ? 1.35 : 1.35,
                               // shrinkWrap agar ukuran kisi menyesuaikan tinggi konten anak.
                               shrinkWrap: true,
                               children: items.map((ItemHomepage item) {

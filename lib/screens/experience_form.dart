@@ -1,10 +1,18 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:myportofolio_mobile/models/experience.dart';
+import 'package:myportofolio_mobile/screens/experience_list_screen.dart';
+import 'package:myportofolio_mobile/services/api_client.dart';
+import 'package:myportofolio_mobile/services/auth_state.dart';
+import 'package:myportofolio_mobile/widgets/auth_guard.dart';
 import 'package:myportofolio_mobile/widgets/left_drawer.dart';
+import 'package:provider/provider.dart';
 
-/// Halaman formulir untuk menambahkan data pengalaman (Experience) baru ke dalam portofolio.
-/// Field dan aturan validasi disesuaikan dengan model `Experience` pada backend Django.
+/// Halaman formulir untuk menambahkan data [Experience] baru ke backend Django DRF.
+/// Membutuhkan autentikasi token sebelum melakukan POST ke `/api/v1/experiences/`.
 class ExperienceFormPage extends StatefulWidget {
-  const ExperienceFormPage({super.key});
+  const ExperienceFormPage({this.openedFromList = false, super.key});
+
+  final bool openedFromList;
 
   @override
   State<ExperienceFormPage> createState() => _ExperienceFormPageState();
@@ -16,35 +24,32 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _thumbnailController = TextEditingController();
-  final _startDateController = TextEditingController();
   final _endDateController = TextEditingController();
 
-  static const String _defaultCategory = 'Full-Time';
-  static const List<String> _categories = [
-    'Internship',
-    'Research',
-    'Volunteer',
-    'Part-Time',
-    'Full-Time',
-    'Freelance',
-  ];
+  static const String _defaultCategory = 'full-time';
+  static const Map<String, String> _categoryChoices = {
+    'internship': 'Internship',
+    'research': 'Research',
+    'volunteer': 'Volunteer',
+    'part-time': 'Part-Time',
+    'full-time': 'Full-Time',
+    'freelance': 'Freelance',
+  };
 
   String _category = _defaultCategory;
-  DateTime? _startedAt;
   DateTime? _endedAt;
   bool _isOngoing = false;
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
     _thumbnailController.dispose();
-    _startDateController.dispose();
     _endDateController.dispose();
     super.dispose();
   }
 
-  /// Memformat [DateTime] menjadi string tanggal `YYYY-MM-DD`.
   String _formatDate(DateTime date) {
     final year = date.year.toString().padLeft(4, '0');
     final month = date.month.toString().padLeft(2, '0');
@@ -52,33 +57,20 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
     return '$year-$month-$day';
   }
 
-  /// Membuka pemilih tanggal (`showDatePicker`) untuk tanggal mulai atau tanggal selesai.
-  Future<void> _pickDate({required bool isStartDate}) async {
-    final initialDate = isStartDate
-        ? (_startedAt ?? DateTime.now())
-        : (_endedAt ?? _startedAt ?? DateTime.now());
-
+  Future<void> _pickEndDate() async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: initialDate,
+      initialDate: _endedAt ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
-
     if (picked == null) return;
-
     setState(() {
-      if (isStartDate) {
-        _startedAt = picked;
-        _startDateController.text = _formatDate(picked);
-      } else {
-        _endedAt = picked;
-        _endDateController.text = _formatDate(picked);
-      }
+      _endedAt = picked;
+      _endDateController.text = _formatDate(picked);
     });
   }
 
-  /// Memvalidasi format URL opsional (hanya mengizinkan skema `http` atau `https`).
   String? _validateOptionalUrl(String? value) {
     final trimmed = value?.trim() ?? '';
     if (trimmed.isEmpty) {
@@ -96,71 +88,146 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
     return null;
   }
 
-  /// Mengatur ulang seluruh state dan controller formulir setelah dialog ditutup.
   void _resetForm() {
     _formKey.currentState?.reset();
     _titleController.clear();
     _descriptionController.clear();
     _thumbnailController.clear();
-    _startDateController.clear();
     _endDateController.clear();
     setState(() {
       _category = _defaultCategory;
-      _startedAt = null;
       _endedAt = null;
       _isOngoing = false;
     });
   }
 
-  void _submitForm() {
+  Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    final title = _titleController.text.trim();
-    final description = _descriptionController.text.trim();
-    final thumbnail = _thumbnailController.text.trim();
-    final startDateText = _formatDate(_startedAt!);
-    final endDateText = (_isOngoing || _endedAt == null)
-        ? 'Masih berlangsung'
-        : _formatDate(_endedAt!);
+    final loggedIn = await ensureLoggedIn(context);
+    if (!loggedIn || !mounted) return;
 
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Experience berhasil ditambahkan!'),
-          content: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('Judul: $title'),
-                const SizedBox(height: 4),
-                Text('Kategori: $_category'),
-                const SizedBox(height: 4),
-                Text('Tanggal Mulai: $startDateText'),
-                const SizedBox(height: 4),
-                Text('Tanggal Selesai: $endDateText'),
-                const SizedBox(height: 4),
-                Text('Deskripsi: $description'),
-                const SizedBox(height: 4),
-                Text('Thumbnail: ${thumbnail.isEmpty ? '-' : thumbnail}'),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-                _resetForm();
-              },
-              child: const Text('Tutup'),
-            ),
-          ],
-        );
-      },
+    final token = context.read<AuthState>().token;
+    if (token == null) return;
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    final newExperience = Experience(
+      title: _titleController.text.trim(),
+      description: _descriptionController.text.trim(),
+      category: _category,
+      thumbnail: _thumbnailController.text.trim(),
+      endedAt: _isOngoing ? null : _endedAt,
     );
+
+    try {
+      final created = await context.read<ApiClient>().createExperience(
+        newExperience,
+        token: token,
+      );
+      if (!mounted) return;
+
+      final categoryLabel = created.categoryDisplay.isNotEmpty
+          ? created.categoryDisplay
+          : (_categoryChoices[created.category] ?? created.category);
+      final endDateText = (created.isOngoing || created.endedAt == null)
+          ? 'Masih berlangsung'
+          : _formatDate(created.endedAt!);
+
+      showDialog(
+        context: context,
+        builder: (dialogContext) {
+          return AlertDialog(
+            title: const Text('Experience berhasil ditambahkan!'),
+            content: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Judul: ${created.title}'),
+                  const SizedBox(height: 4),
+                  Text('Kategori: $categoryLabel'),
+                  const SizedBox(height: 4),
+                  Text('Tanggal Selesai: $endDateText'),
+                  const SizedBox(height: 4),
+                  Text('Deskripsi: ${created.description}'),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Thumbnail: ${created.thumbnail.isEmpty ? '-' : created.thumbnail}',
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(dialogContext);
+                  _resetForm();
+                },
+                child: const Text('OK'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(dialogContext);
+                  if (widget.openedFromList) {
+                    Navigator.pop(context, true);
+                  } else {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ExperienceListScreen(),
+                      ),
+                    );
+                  }
+                },
+                child: const Text('Lihat Daftar'),
+              ),
+            ],
+          );
+        },
+      );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      if (e.statusCode == 401) {
+        await context.read<AuthState>().logout();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            const SnackBar(
+              content: Text('Session expired. Please login again.'),
+            ),
+          );
+        await ensureLoggedIn(context);
+        return;
+      }
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text('Failed to save experience (${e.statusCode}).'),
+          ),
+        );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('Network error while saving experience.'),
+          ),
+        );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    }
   }
 
   InputDecoration _fieldDecoration({
@@ -229,11 +296,11 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
                         labelText: 'Kategori Experience',
                         hintText: 'Pilih kategori',
                       ),
-                      items: _categories
+                      items: _categoryChoices.entries
                           .map(
-                            (category) => DropdownMenuItem<String>(
-                              value: category,
-                              child: Text(category),
+                            (entry) => DropdownMenuItem<String>(
+                              value: entry.key,
+                              child: Text(entry.value),
                             ),
                           )
                           .toList(),
@@ -250,27 +317,7 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 16.0),
-
-                    // === Tanggal Mulai ===
-                    TextFormField(
-                      controller: _startDateController,
-                      readOnly: true,
-                      decoration: _fieldDecoration(
-                        labelText: 'Tanggal Mulai',
-                        hintText: 'Pilih tanggal mulai (YYYY-MM-DD)',
-                        suffixIcon: const Icon(Icons.calendar_today),
-                      ),
-                      onTap: () => _pickDate(isStartDate: true),
-                      validator: (String? value) {
-                        if (_startedAt == null ||
-                            (value?.trim().isEmpty ?? true)) {
-                          return 'Tanggal mulai tidak boleh kosong!';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 8.0),
+                    const SizedBox(height: 12.0),
 
                     // === Status Masih Berlangsung ===
                     CheckboxListTile(
@@ -313,19 +360,7 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
                               )
                             : const Icon(Icons.calendar_today),
                       ),
-                      onTap: _isOngoing
-                          ? null
-                          : () => _pickDate(isStartDate: false),
-                      validator: (String? value) {
-                        if (_isOngoing || _endedAt == null) {
-                          return null;
-                        }
-                        if (_startedAt != null &&
-                            _endedAt!.isBefore(_startedAt!)) {
-                          return 'Tanggal selesai tidak boleh sebelum tanggal mulai!';
-                        }
-                        return null;
-                      },
+                      onTap: _isOngoing ? null : _pickEndDate,
                     ),
                     const SizedBox(height: 16.0),
 
@@ -359,7 +394,7 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
                     ),
                     const SizedBox(height: 24.0),
 
-                    // === Tombol Simpan ===
+                    // === Tombol Save ===
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryColor,
@@ -369,14 +404,23 @@ class _ExperienceFormPageState extends State<ExperienceFormPage> {
                           borderRadius: BorderRadius.circular(8.0),
                         ),
                       ),
-                      onPressed: _submitForm,
-                      child: const Text(
-                        'Simpan',
-                        style: TextStyle(
-                          fontSize: 16.0,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      onPressed: _isSubmitting ? null : _submitForm,
+                      child: _isSubmitting
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text(
+                              'Save',
+                              style: TextStyle(
+                                fontSize: 16.0,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                     ),
                   ],
                 ),
